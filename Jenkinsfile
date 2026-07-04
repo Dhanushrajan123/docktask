@@ -59,26 +59,18 @@ pipeline {
             }
         }
     }
+ post {
+    failure {
+        echo 'Build failed.'
 
-    post {
-        success {
-            echo 'Pipeline executed successfully.'
-        }
+        sh '''
+        git config user.name "Jenkins"
+        git config user.email "jenkins@local"
 
-        failure {
-            echo 'Build failed. Reverting the latest commit.'
+        git revert HEAD --no-edit || true
 
-            sh '''
-            git config user.name "Jenkins"
-            git config user.email "jenkins@local"
-
-            git revert HEAD --no-edit || true
-            git push origin HEAD:main || true
-            '''
-        }
-
-        always {
-            sh 'docker logout || true'
-        }
+        echo "Latest commit reverted locally."
+        '''
     }
 }
+}   
