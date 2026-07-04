@@ -1,9 +1,8 @@
 pipeline {
-
     agent any
 
     environment {
-        IMAGE_NAME = "dhanushrajan/myapp"
+        IMAGE_NAME = "dhanushrajan/docktask"
         IMAGE_TAG = "latest"
     }
 
@@ -12,13 +11,25 @@ pipeline {
         stage('Clone Repository') {
             steps {
                 git branch: 'main',
-                url: 'https://github.com/Dhanushrajan123/docktask.git'
+                    url: 'https://github.com/Dhanushrajan123/docktask.git'
+            }
+        }
+
+        stage('Install Dependencies') {
+            steps {
+                sh 'npm install'
             }
         }
 
         stage('Build Application') {
             steps {
-                sh 'mvn clean package'
+                sh '''
+                if npm run | grep -q "build"; then
+                    npm run build
+                else
+                    echo "No build script found. Skipping build stage."
+                fi
+                '''
             }
         }
 
@@ -28,18 +39,15 @@ pipeline {
             }
         }
 
-        stage('Login DockerHub') {
+        stage('Docker Hub Login') {
             steps {
-                withCredentials([
-                    usernamePassword(
-                        credentialsId: 'dockerhub',
-                        usernameVariable: 'USERNAME',
-                        passwordVariable: 'PASSWORD'
-                    )
-                ]) {
-
+                withCredentials([usernamePassword(
+                    credentialsId: 'passwd',
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
+                )]) {
                     sh '''
-                    echo $PASSWORD | docker login -u $USERNAME --password-stdin
+                    echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
                     '''
                 }
             }
@@ -50,26 +58,27 @@ pipeline {
                 sh 'docker push $IMAGE_NAME:$IMAGE_TAG'
             }
         }
-
     }
 
     post {
-
         success {
-            echo "Pipeline completed successfully"
+            echo 'Pipeline executed successfully.'
         }
 
         failure {
-
-            echo "Build failed"
+            echo 'Build failed. Reverting the latest commit.'
 
             sh '''
-            git reset --hard HEAD~1
+            git config user.name "Jenkins"
+            git config user.email "jenkins@local"
 
-            git push origin HEAD --force
+            git revert HEAD --no-edit || true
+            git push origin HEAD:main || true
             '''
         }
 
+        always {
+            sh 'docker logout || true'
+        }
     }
-
 }
