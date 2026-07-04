@@ -16,10 +16,13 @@ pipeline {
         }
 
         stage('Install Dependencies') {
-            steps {
-                sh 'npm install'
-            }
-        }
+    steps {
+        sh '''
+        cd docktask
+        npm install
+        '''
+    }
+}
 
         stage('Build Application') {
             steps {
