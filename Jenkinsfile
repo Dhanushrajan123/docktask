@@ -8,22 +8,22 @@ pipeline {
 
     stages {
 
-        stage('Clone Repository') {
+        stage('Checkout Code') {
             steps {
                 git branch: 'main',
-                    url: 'https://github.com/Dhanushrajan123/docktask.git'
+                url: 'https://github.com/Dhanushrajan123/docktask.git'
             }
         }
 
         stage('Install Dependencies') {
             steps {
                 dir('docktask') {
-                    bat 'npm install'
+                    bat 'npm install --legacy-peer-deps'
                 }
             }
         }
 
-        stage('Build Application') {
+        stage('Build App') {
             steps {
                 dir('docktask') {
                     bat 'npm run build'
@@ -39,19 +39,21 @@ pipeline {
             }
         }
 
-        stage('Docker Hub Login') {
+        stage('Docker Login') {
             steps {
                 withCredentials([usernamePassword(
                     credentialsId: 'passwd',
-                    usernameVariable: 'DOCKER_USER',
-                    passwordVariable: 'DOCKER_PASS'
+                    usernameVariable: 'USER',
+                    passwordVariable: 'PASS'
                 )]) {
-                    bat 'echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin'
+                    bat '''
+                    echo %PASS% | docker login -u %USER% --password-stdin
+                    '''
                 }
             }
         }
 
-        stage('Push Docker Image') {
+        stage('Push Image') {
             steps {
                 bat 'docker push %IMAGE_NAME%:%IMAGE_TAG%'
             }
@@ -59,21 +61,17 @@ pipeline {
     }
 
     post {
-
         success {
-            echo 'Pipeline completed successfully.'
+            echo 'Build Successful 🚀'
         }
 
         failure {
-    echo 'Build failed. Reverting latest commit locally...'
+            echo 'Build Failed ❌ (check logs)'
+        }
 
-    dir('docktask') {
-        bat '''
-            git config user.name "Jenkins"
-            git config user.email "jenkins@local"
-            git revert HEAD --no-edit
-        '''
-    }
-}
+        always {
+            bat 'docker logout || exit 0'
+            cleanWs()
+        }
     }
 }
