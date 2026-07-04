@@ -16,29 +16,32 @@ pipeline {
         }
 
         stage('Install Dependencies') {
-    steps {
-        sh '''
-        cd docktask
-        npm install
-        '''
-    }
-}
+            steps {
+                dir('docktask') {
+                    sh 'npm install'
+                }
+            }
+        }
 
         stage('Build Application') {
             steps {
-                sh '''
-                if npm run | grep -q "build"; then
-                    npm run build
-                else
-                    echo "No build script found. Skipping build stage."
-                fi
-                '''
+                dir('docktask') {
+                    sh '''
+                    if npm run | grep -q "build"; then
+                        npm run build
+                    else
+                        echo "No build script found. Skipping build stage."
+                    fi
+                    '''
+                }
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                sh 'docker build -t $IMAGE_NAME:$IMAGE_TAG .'
+                dir('docktask') {
+                    sh 'docker build -t $IMAGE_NAME:$IMAGE_TAG .'
+                }
             }
         }
 
@@ -62,18 +65,28 @@ pipeline {
             }
         }
     }
- post {
-    failure {
-        echo 'Build failed.'
 
-        sh '''
-        git config user.name "Jenkins"
-        git config user.email "jenkins@local"
+    post {
+        success {
+            echo 'Pipeline completed successfully.'
+        }
 
-        git revert HEAD --no-edit || true
+        failure {
+            echo 'Build failed. Reverting the latest Git commit locally.'
 
-        echo "Latest commit reverted locally."
-        '''
+            sh '''
+            git config user.name "Jenkins"
+            git config user.email "jenkins@local"
+
+            git revert HEAD --no-edit || true
+
+            echo "Latest commit reverted locally."
+            '''
+        }
+
+        always {
+            sh 'docker logout || true'
+            cleanWs()
+        }
     }
 }
-}   
