@@ -18,7 +18,7 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 dir('docktask') {
-                    sh 'npm install'
+                    bat 'npm install'
                 }
             }
         }
@@ -26,13 +26,7 @@ pipeline {
         stage('Build Application') {
             steps {
                 dir('docktask') {
-                    sh '''
-                    if npm run | grep -q "build"; then
-                        npm run build
-                    else
-                        echo "No build script found. Skipping build stage."
-                    fi
-                    '''
+                    bat 'npm run build'
                 }
             }
         }
@@ -40,7 +34,7 @@ pipeline {
         stage('Build Docker Image') {
             steps {
                 dir('docktask') {
-                    sh 'docker build -t $IMAGE_NAME:$IMAGE_TAG .'
+                    bat 'docker build -t %IMAGE_NAME%:%IMAGE_TAG% .'
                 }
             }
         }
@@ -52,40 +46,36 @@ pipeline {
                     usernameVariable: 'DOCKER_USER',
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
-                    sh '''
-                    echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
-                    '''
+                    bat 'echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin'
                 }
             }
         }
 
         stage('Push Docker Image') {
             steps {
-                sh 'docker push $IMAGE_NAME:$IMAGE_TAG'
+                bat 'docker push %IMAGE_NAME%:%IMAGE_TAG%'
             }
         }
     }
 
     post {
+
         success {
             echo 'Pipeline completed successfully.'
         }
 
         failure {
-            echo 'Build failed. Reverting the latest Git commit locally.'
+            echo 'Build failed. Reverting latest commit locally...'
 
-            sh '''
-            git config user.name "Jenkins"
-            git config user.email "jenkins@local"
-
-            git revert HEAD --no-edit || true
-
-            echo "Latest commit reverted locally."
+            bat '''
+                git config user.name "Jenkins"
+                git config user.email "jenkins@local"
+                git revert HEAD --no-edit
             '''
         }
 
         always {
-            sh 'docker logout || true'
+            bat 'docker logout'
             cleanWs()
         }
     }
