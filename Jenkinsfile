@@ -65,18 +65,15 @@ pipeline {
         }
 
         failure {
-            echo 'Build failed. Reverting latest commit locally...'
+    echo 'Build failed. Reverting latest commit locally...'
 
-            bat '''
-                git config user.name "Jenkins"
-                git config user.email "jenkins@local"
-                git revert HEAD --no-edit
-            '''
-        }
-
-        always {
-            bat 'docker logout'
-            cleanWs()
-        }
+    dir('docktask') {
+        bat '''
+            git config user.name "Jenkins"
+            git config user.email "jenkins@local"
+            git revert HEAD --no-edit
+        '''
+    }
+}
     }
 }
