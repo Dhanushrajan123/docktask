@@ -17,19 +17,19 @@ pipeline {
 
         stage('Install Dependencies') {
             steps {
-                bat 'npm install --legacy-peer-deps'
+                sh 'npm install --legacy-peer-deps'
             }
         }
 
         stage('Build React App') {
             steps {
-                bat 'npm run build'
+                sh 'npm run build'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                bat 'docker build -t %IMAGE_NAME%:%IMAGE_TAG% .'
+                sh 'docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .'
             }
         }
 
@@ -40,8 +40,8 @@ pipeline {
                     usernameVariable: 'DOCKER_USER',
                     passwordVariable: 'DOCKER_PASS'
                 )]) {
-                    bat '''
-                    echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
+                    sh '''
+                        echo "$DOCKER_PASS" | docker login -u "$DOCKER_USER" --password-stdin
                     '''
                 }
             }
@@ -49,7 +49,7 @@ pipeline {
 
         stage('Push Docker Image') {
             steps {
-                bat 'docker push %IMAGE_NAME%:%IMAGE_TAG%'
+                sh 'docker push ${IMAGE_NAME}:${IMAGE_TAG}'
             }
         }
     }
@@ -60,7 +60,7 @@ pipeline {
         }
 
         always {
-            bat 'docker logout'
+            sh 'docker logout || true'
             cleanWs()
         }
     }
