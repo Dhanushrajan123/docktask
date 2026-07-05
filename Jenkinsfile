@@ -8,34 +8,28 @@ pipeline {
 
     stages {
 
-        stage('Checkout Code') {
+        stage('Checkout') {
             steps {
                 git branch: 'main',
-                url: 'https://github.com/Dhanushrajan123/docktask.git'
+                    url: 'https://github.com/Dhanushrajan123/docktask.git'
             }
         }
 
         stage('Install Dependencies') {
             steps {
-                dir('docktask') {
-                    bat 'npm install --legacy-peer-deps'
-                }
+                bat 'npm install --legacy-peer-deps'
             }
         }
 
-        stage('Build App') {
+        stage('Build React App') {
             steps {
-                dir('docktask') {
-                    bat 'npm run build'
-                }
+                bat 'npm run build'
             }
         }
 
         stage('Build Docker Image') {
             steps {
-                dir('docktask') {
-                    bat 'docker build -t %IMAGE_NAME%:%IMAGE_TAG% .'
-                }
+                bat 'docker build -t %IMAGE_NAME%:%IMAGE_TAG% .'
             }
         }
 
@@ -43,17 +37,17 @@ pipeline {
             steps {
                 withCredentials([usernamePassword(
                     credentialsId: 'passwd',
-                    usernameVariable: 'USER',
-                    passwordVariable: 'PASS'
+                    usernameVariable: 'DOCKER_USER',
+                    passwordVariable: 'DOCKER_PASS'
                 )]) {
                     bat '''
-                    echo %PASS% | docker login -u %USER% --password-stdin
+                    echo %DOCKER_PASS% | docker login -u %DOCKER_USER% --password-stdin
                     '''
                 }
             }
         }
 
-        stage('Push Image') {
+        stage('Push Docker Image') {
             steps {
                 bat 'docker push %IMAGE_NAME%:%IMAGE_TAG%'
             }
@@ -62,15 +56,11 @@ pipeline {
 
     post {
         success {
-            echo 'Build Successful 🚀'
-        }
-
-        failure {
-            echo 'Build Failed ❌ (check logs)'
+            echo 'Docker image pushed successfully!'
         }
 
         always {
-            bat 'docker logout || exit 0'
+            bat 'docker logout'
             cleanWs()
         }
     }
