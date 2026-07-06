@@ -4,6 +4,8 @@ pipeline {
     environment {
         IMAGE_NAME = "dhanushrajannn/docktask"
         IMAGE_TAG = "${build number}"
+    }
+        
     
 
     stages {
