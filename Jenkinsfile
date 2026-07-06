@@ -3,7 +3,7 @@ pipeline {
 
     environment {
         IMAGE_NAME = "dhanushrajan/docktask"
-        IMAGE_TAG = "latest"
+        IMAGE_TAG = "${BUILD_NUMBER}"
     }
 
     stages {
