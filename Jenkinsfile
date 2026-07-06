@@ -2,7 +2,7 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "dhanushrajaaan/docktask"
+        IMAGE_NAME = "dhanushrajan/docktask"
         IMAGE_TAG = "latest"
     }
 
