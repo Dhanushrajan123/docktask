@@ -2,9 +2,9 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = "dhanushrajan/docktask"
-        IMAGE_TAG = "latest"
-    }
+        IMAGE_NAME = "dhanushrajannn/docktask"
+        IMAGE_TAG = "${build number}"
+    
 
     stages {
 
