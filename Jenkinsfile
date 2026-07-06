@@ -14,21 +14,10 @@ pipeline {
                     url: 'https://github.com/Dhanushrajan123/docktask.git'
             }
         }
-
-        stage('Install Dependencies') {
-            steps {
-                sh 'npm install --legacy-peer-deps'
-            }
-        }
-
-        stage('Build React App') {
-            steps {
-                sh 'npm run build'
-            }
-        }
-
+        
         stage('Build Docker Image') {
             steps {
+                sh 'whoami'
                 sh 'docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .'
             }
         }
